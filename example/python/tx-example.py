@@ -154,7 +154,7 @@ def add_coin_to_admin():
 def create_account_kalahan():
     tx = tx_builder.creatorAccountId(creator) \
         .createdTime(current_time()) \
-        .createAccount("kalahan", "test", kalahan_keypair.publicKey()) \
+        .createAccount("kalahan", "notary", kalahan_keypair.publicKey()) \
         .build()
 
     send_tx(tx, key_pair)

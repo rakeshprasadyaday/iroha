@@ -8,16 +8,16 @@
               {
                 "addPeer": {
                   "peer": {
-                    "address": "10.211.38.36:10001",
-                    "peerKey": "0E2icbV/5jQmrh3Jf2lSEEA3QR/PTztzncIX9F5fyZs="
+                    "address": "10.211.38.10:10001",
+                    "peerKey": "rO+wvxTOESuNCVd5HEZMXdeLkjHs5/heVn96PBFzLr0="
                   }
                 }
               },
               {
                 "addPeer": {
                   "peer": {
-                    "address": "10.211.38.10:10001",
-                    "peerKey": "rO+wvxTOESuNCVd5HEZMXdeLkjHs5/heVn96PBFzLr0="
+                    "address": "10.211.38.36:10001",
+                    "peerKey": "E57Y18tbWeXzdmPjjbliITZ8Jd/8KDoE+3iW/jkwPpE="
                   }
                 }
               },
