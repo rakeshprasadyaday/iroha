@@ -291,12 +291,6 @@
                 }
               },
               {
-                "appendRole": {
-                  "accountId": "test@notary",
-                  "roleName": "tester"
-                }
-              },
-              {
                 "createAccount": {
                   "accountName": "vacuumer",
                   "domainId": "notary",
