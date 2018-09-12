@@ -17,9 +17,9 @@ crypto = iroha.ModelCrypto()
 admin_priv = open("../admin@notary.priv", "r").read()
 admin_pub = open("../admin@notary.pub", "r").read()
 
-# malahan_priv = open("../malahan.priv", "r").read()
-# malahan_pub = open("../malahan.pub", "r").read()
-# malahan_keypair = crypto.convertFromExisting(malahan_pub, malahan_priv)
+malahan_priv = open("../malahan.priv", "r").read()
+malahan_pub = open("../malahan.pub", "r").read()
+malahan_keypair = crypto.convertFromExisting(malahan_pub, malahan_priv)
 
 kalahan_priv = open("../kalahan.priv", "r").read()
 kalahan_pub = open("../kalahan.pub", "r").read()
@@ -161,20 +161,20 @@ def create_account_kalahan():
     print_status_streaming(tx)
 
 def add_signatory_and_quorum():
-    tx = tx_builder.creatorAccountId("kalahan@test") \
+    tx = tx_builder.creatorAccountId("kalahan@notary") \
         .createdTime(current_time()) \
-        .addSignatory("kalahan@test", malahan_keypair.publicKey()) \
-        .setAccountQuorum("kalahan@test", 2) \
+        .addSignatory("kalahan@notary", malahan_keypair.publicKey()) \
+        .setAccountQuorum("kalahan@notary", 2) \
         .build()
 
     send_tx(tx, kalahan_keypair)
     print_status_streaming(tx)
 
 def send_mst_transaction():
-    tx = tx_builder.creatorAccountId("kalahan@test") \
+    tx = tx_builder.creatorAccountId("kalahan@notary") \
         .createdTime(current_time()) \
         .quorum(2) \
-        .setAccountDetail("kalahan@test", "age", "5") \
+        .setAccountDetail("kalahan@notary", "age", "5") \
         .build()
 
     send_tx(tx, kalahan_keypair)
@@ -183,7 +183,7 @@ def send_mst_transaction():
 def get_pending():
     global query_counter
     query_counter += 1
-    query = query_builder.creatorAccountId("kalahan@test") \
+    query = query_builder.creatorAccountId("kalahan@notary") \
         .createdTime(current_time()) \
         .queryCounter(query_counter) \
         .getPendingTransactions() \
