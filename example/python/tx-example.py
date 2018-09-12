@@ -16,6 +16,15 @@ crypto = iroha.ModelCrypto()
 
 admin_priv = open("../admin@test.priv", "r").read()
 admin_pub = open("../admin@test.pub", "r").read()
+
+malahan_priv = open("../malahan.priv", "r").read()
+malahan_pub = open("../malahan.pub", "r").read()
+malahan_keypair = crypto.convertFromExisting(malahan_pub, malahan_priv)
+
+kalahan_priv = open("../kalahan.priv", "r").read()
+kalahan_pub = open("../kalahan.pub", "r").read()
+kalahan_keypair = crypto.convertFromExisting(kalahan_pub, kalahan_priv)
+
 key_pair = crypto.convertFromExisting(admin_pub, admin_priv)
 
 user1_kp = crypto.generateKeypair()
@@ -142,17 +151,46 @@ def add_coin_to_admin():
     send_tx(tx, key_pair)
     print_status_streaming(tx)
 
-
-def create_account_userone():
-    """
-    Create account "userone@domain"
-    """
+def create_account_kalahan():
     tx = tx_builder.creatorAccountId(creator) \
         .createdTime(current_time()) \
-        .createAccount("userone", "domain", user1_kp.publicKey()).build()
+        .createAccount("kalahan", "test", kalahan_keypair.publicKey()) \
+        .build()
 
     send_tx(tx, key_pair)
     print_status_streaming(tx)
+
+def add_signatory_and_quorum():
+    tx = tx_builder.creatorAccountId("kalahan@test") \
+        .createdTime(current_time()) \
+        .addSignatory("kalahan@test", malahan_keypair.publicKey()) \
+        .setAccountQuorum("kalahan@test", 2) \
+        .build()
+
+    send_tx(tx, kalahan_keypair)
+    print_status_streaming(tx)
+
+def send_mst_transaction():
+    tx = tx_builder.creatorAccountId("kalahan@test") \
+        .createdTime(current_time()) \
+        .quorum(2) \
+        .setAccountDetail("kalahan@test", "age", "5") \
+        .build()
+
+    send_tx(tx, kalahan_keypair)
+    print_status_streaming(tx)
+
+def get_pending():
+    global query_counter
+    query_counter += 1
+    query = query_builder.creatorAccountId("kalahan@test") \
+        .createdTime(current_time()) \
+        .queryCounter(query_counter) \
+        .getPendingTransactions() \
+        .build()
+
+    query_response = send_query(query, malahan_keypair)
+    print(query_response)
 
 def transfer_coin_from_admin_to_userone():
     """
@@ -161,30 +199,6 @@ def transfer_coin_from_admin_to_userone():
     tx = tx_builder.creatorAccountId(creator) \
         .createdTime(current_time()) \
         .transferAsset("admin@test", "userone@domain", "coin#domain", "Some message", "2.00").build()
-
-    send_tx(tx, key_pair)
-    print_status_streaming(tx)
-
-def grant_admin_to_add_detail_to_userone():
-    """
-    Grant admin@test to be able to set details information to userone@domain
-    """
-    tx = tx_builder.creatorAccountId("userone@domain") \
-        .createdTime(current_time()) \
-        .grantPermission(creator, iroha.Grantable_kSetMyAccountDetail) \
-        .build()
-
-    send_tx(tx, user1_kp)
-    print_status_streaming(tx)
-
-def set_age_to_userone_by_admin():
-    """
-    Set age to userone@domain by admin@test
-    """
-    tx = tx_builder.creatorAccountId(creator) \
-        .createdTime(current_time()) \
-        .setAccountDetail("userone@domain", "age", "18") \
-        .build()
 
     send_tx(tx, key_pair)
     print_status_streaming(tx)
@@ -247,13 +261,17 @@ def get_userone_info():
 
 
 
-create_asset_coin()
-add_coin_to_admin()
-create_account_userone()
-transfer_coin_from_admin_to_userone()
-grant_admin_to_add_detail_to_userone()
-set_age_to_userone_by_admin()
-get_coin_info()
-get_account_asset()
-get_userone_info()
+# create_asset_coin()
+# add_coin_to_admin()
+# create_account_malahan()
+create_account_kalahan()
+add_signatory_and_quorum()
+send_mst_transaction()
+# get_pending()
+# transfer_coin_from_admin_to_userone()
+# grant_admin_to_add_detail_to_userone()
+# set_age_to_userone_by_admin()
+# get_coin_info()
+# get_account_asset()
+# get_userone_info()
 print("done!")

@@ -8,10 +8,18 @@
                      {
                         "addPeer":{
                            "peer":{
-                              "address":"0.0.0.0:10001",
-                              "peerKey":"vd1YQE0TFeDrJ5AsXXyOsGAsFiOPAFdz30BrwZEwiSk="
+                              "address":"10.211.38.10:10001",
+                              "peerKey":"OBiHnTKCp5OuK7zElL1cBbxeftWZUNT9tnT/CvJb3oM="
                            }
                         }
+                     },
+                     {
+                         "addPeer":{
+                            "peer":{
+                               "address":"10.211.38.39:10001",
+                               "peerKey":"JQyrSqov5PsGzpsfCH/A4LjLqknTb3rkHoOr/YrX7gk="
+                            }
+                         }
                      },
                      {
                         "createRole":{
