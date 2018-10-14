@@ -24,6 +24,7 @@
 #include "crypto/keys_manager_impl.hpp"
 #include "main/application.hpp"
 #include "main/iroha_conf_loader.hpp"
+#include "main/irohad_builder.hpp"
 #include "main/raw_block_loader.hpp"
 
 /**
@@ -128,18 +129,19 @@ int main(int argc, char *argv[]) {
   }
 
   // Configuring iroha daemon
-  Irohad irohad(config[mbr::BlockStorePath].GetString(),
-                config[mbr::PgOpt].GetString(),
-                config[mbr::ToriiPort].GetUint(),
-                config[mbr::InternalPort].GetUint(),
-                config[mbr::MaxProposalSize].GetUint(),
-                std::chrono::milliseconds(config[mbr::ProposalDelay].GetUint()),
-                std::chrono::milliseconds(config[mbr::VoteDelay].GetUint()),
-                *keypair,
-                config[mbr::MstSupport].GetBool());
+  auto builder = iroha::IrohadBuilder(
+      config[mbr::BlockStorePath].GetString(),
+      config[mbr::PgOpt].GetString(),
+      config[mbr::ToriiPort].GetUint(),
+      config[mbr::InternalPort].GetUint(),
+      config[mbr::MaxProposalSize].GetUint(),
+      std::chrono::milliseconds(config[mbr::ProposalDelay].GetUint()),
+      std::chrono::milliseconds(config[mbr::VoteDelay].GetUint()),
+      *keypair,
+      config[mbr::MstSupport].GetBool());
 
   // Check if iroha daemon storage was successfully initialized
-  if (not irohad.storage) {
+  if (not builder.initStorage()) {
     // Abort execution if not
     log->error("Failed to initialize storage");
     return EXIT_FAILURE;
@@ -161,7 +163,7 @@ int main(int argc, char *argv[]) {
 
     // check if ledger data already existing
     auto ledger_not_empty =
-        irohad.storage->getBlockQuery()->getTopBlockHeight() != 0;
+        builder.storage->getBlockQuery()->getTopBlockHeight() != 0;
 
     // Check if force flag to overwrite ledger is specified
     if (ledger_not_empty && not FLAGS_overwrite_ledger) {
@@ -175,21 +177,21 @@ int main(int argc, char *argv[]) {
     // --overwrite-ledger option
 
     // clear previous storage if any
-    irohad.dropStorage();
+    builder.dropStorage();
 
     // reset ordering service persistent counter
-    irohad.resetOrderingService();
+    builder.resetOrderingService();
 
     log->info("Block is parsed");
 
     // Applying transactions from genesis block to iroha storage
-    irohad.storage->insertBlock(*block.value());
+    builder.storage->insertBlock(*block.value());
     log->info("Genesis block inserted, number of transactions: {}",
               block.value()->transactions().size());
   }
 
   // check if at least one block is available in the ledger
-  auto blocks_exist = irohad.storage->getBlockQuery()->getTopBlock().match(
+  auto blocks_exist = builder.storage->getBlockQuery()->getTopBlock().match(
       [](const auto &) { return true; },
       [](iroha::expected::Error<std::string> &) { return false; });
 
@@ -200,6 +202,7 @@ int main(int argc, char *argv[]) {
   }
 
   // init pipeline components
+  auto irohad = builder.build();
   irohad.init();
 
   auto handler = [](int s) { exit_requested.set_value(); };

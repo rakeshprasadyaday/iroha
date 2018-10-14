@@ -20,6 +20,7 @@
 
 #include "cryptography/keypair.hpp"
 #include "main/application.hpp"
+#include "main/irohad_builder.hpp"
 
 namespace integration_framework {
   /**
@@ -36,15 +37,19 @@ namespace integration_framework {
                std::chrono::milliseconds vote_delay,
                const shared_model::crypto::Keypair &keypair,
                bool is_mst_supported)
-        : Irohad(block_store_dir,
-                 pg_conn,
-                 torii_port,
-                 internal_port,
-                 max_proposal_size,
-                 proposal_delay,
-                 vote_delay,
-                 keypair,
-                 is_mst_supported) {}
+        : Irohad([=] {
+            auto builder = iroha::IrohadBuilder(block_store_dir,
+                                                pg_conn,
+                                                torii_port,
+                                                internal_port,
+                                                max_proposal_size,
+                                                proposal_delay,
+                                                vote_delay,
+                                                keypair,
+                                                is_mst_supported);
+            builder.initStorage();
+            return builder.build();
+          }()) {}
 
     auto &getCommandService() {
       return command_service;

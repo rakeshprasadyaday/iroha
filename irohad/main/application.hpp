@@ -84,6 +84,8 @@ class Irohad {
          const shared_model::crypto::Keypair &keypair,
          bool is_mst_supported);
 
+  Irohad(Irohad &&irohad);
+
   /**
    * Initialization of whole objects in system
    */
@@ -112,50 +114,11 @@ class Irohad {
 
   virtual ~Irohad();
 
- protected:
   // -----------------------| component initialization |------------------------
 
-  virtual void initStorage();
+  // virtual void initStorage();
 
-  virtual void initCryptoProvider();
-
-  virtual void initBatchParser();
-
-  virtual void initValidators();
-
-  virtual void initNetworkClient();
-
-  virtual void initFactories();
-
-  virtual void initOrderingGate();
-
-  virtual void initSimulator();
-
-  virtual void initConsensusCache();
-
-  virtual void initBlockLoader();
-
-  virtual void initConsensusGate();
-
-  virtual void initSynchronizer();
-
-  virtual void initPeerCommunicationService();
-
-  virtual void initStatusBus();
-
-  virtual void initMstProcessor();
-
-  virtual void initPendingTxsStorage();
-
-  virtual void initTransactionCommandService();
-
-  virtual void initQueryService();
-
-  /**
-   * Initialize WSV restorer
-   */
-  virtual void initWsvRestorer();
-
+ protected:
   // constructor dependencies
   std::string block_store_dir_;
   std::string pg_conn_;
