@@ -39,6 +39,13 @@ namespace integration_framework {
       return base_behaviour_.processLoaderBlocksRequest(request);
     }
 
+    OrderingProposalRequestResult
+    DelayedBehaviour::processOrderingProposalRequest(
+        const OrderingProposalRequest &request) {
+      std::this_thread::sleep_for(delay_);
+      return base_behaviour_.processOrderingProposalRequest(request);
+    }
+
     std::string DelayedBehaviour::getName() {
       return "delayed " + base_behaviour_.getName();
     }
