@@ -33,6 +33,11 @@ namespace integration_framework {
               [this](const auto &proposal) {
                 this->processOgProposal(proposal);
               }));
+      subscriptions_.emplace_back(
+          getFakePeer().get_batches_observable().subscribe(
+              [this](const auto &batches_for_round) {
+                this->processOrderingBatches(*batches_for_round);
+              }));
     }
 
     void Behaviour::absolve() {

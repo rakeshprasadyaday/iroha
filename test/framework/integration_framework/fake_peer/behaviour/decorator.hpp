@@ -27,6 +27,8 @@ namespace integration_framework {
           const LoaderBlocksRequest &request) override = 0;
       OrderingProposalRequestResult processOrderingProposalRequest(
           const OrderingProposalRequest &request) override = 0;
+      void processOrderingBatches(
+          const BatchesForRound &batches_for_round) override = 0;
 
       std::string getName() override = 0;
 

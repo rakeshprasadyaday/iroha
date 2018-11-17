@@ -46,6 +46,12 @@ namespace integration_framework {
       return base_behaviour_.processOrderingProposalRequest(request);
     }
 
+    void DelayedBehaviour::processOrderingBatches(
+        const BatchesForRound &batches_for_round) {
+      std::this_thread::sleep_for(delay_);
+      base_behaviour_.processOrderingBatches(batches_for_round);
+    }
+
     std::string DelayedBehaviour::getName() {
       return "delayed " + base_behaviour_.getName();
     }
