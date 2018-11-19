@@ -282,3 +282,68 @@ TEST_F(FakePeerExampleFixture,
       [&commited_all_blocks] { return commited_all_blocks.load(); }))
       << "Reached timeout waiting for all blocks to be committed.";
 }
+
+/**
+ * Check that after receiving a valid command the ITF peer provides a proposal
+ * containing it.
+ *
+ * \attention this code is nothing more but an example of Fake Peer usage
+ *
+ * @given a network of two iroha peers
+ * @when a valid command is sent to one
+ * @then it must either (on demand) provide a proposal containing this command,
+ * or request it from the other peer
+ */
+TEST_F(FakePeerExampleFixture,
+       OnDemandOrderingProposalAfterValidCommandReceived) {
+  static constexpr std::chrono::seconds kProposalWaitingTime(1);
+
+  auto &itf = prepareState(1);
+
+  // Create the tx:
+  auto tx = complete(
+      baseTx(kAdminId).transferAsset(kAdminId, kUserId, kAssetId, "tx1", "1.0"),
+      kAdminKeypair);
+  auto hash = tx.reducedHash();
+
+  // watch the incoming proposal requests
+  std::atomic_bool got_proposal_from_fake_peer(false);
+  fake_peers_.front()->get_proposal_requests_observable().subscribe(
+      [&got_proposal_from_fake_peer](const auto &round) {
+        got_proposal_from_fake_peer.store(true);
+      });
+
+  // Send a command to the ITF peer and store the block height:
+  shared_model::interface::types::HeightType block_height = 0;
+  itf.sendTx(tx).checkBlock([&block_height, &hash](const auto &block) {
+    block_height = block->height();
+    ASSERT_TRUE(std::any_of(
+        block->transactions().begin(),
+        block->transactions().end(),
+        [&hash](const auto &tx) { return tx.reducedHash() == hash; }))
+        << "The block does not contain the transaction!";
+  });
+  ASSERT_TRUE(block_height > 0) << "Did not get last block height value!";
+
+  // If the proposal for our command was asked from a fake peer, consider the
+  // test passed. Otherwise ask the proposal for that round and check it:
+  if (!got_proposal_from_fake_peer.load()) {
+    auto request_proposal = [source_peer = fake_peers_.front()](
+                                const iroha::consensus::Round &round) {
+      return source_peer->sendProposalRequest(round, kProposalWaitingTime);
+    };
+    auto proposal = request_proposal({block_height, 0});
+    if (proposal == nullptr) {
+      proposal = request_proposal({block_height, 1});
+    }
+    ASSERT_TRUE(proposal != nullptr)
+        << "Did not get the proposal for round (" << block_height << ", 0)!";
+
+    // Check the proposal has the tx:
+    ASSERT_TRUE(
+        std::any_of(proposal->transactions().begin(),
+                    proposal->transactions().end(),
+                    [&hash](const auto &tx) { return tx.reducedHash() == hash; }))
+        << "The proposal does not contain the transaction!";
+  }
+}
