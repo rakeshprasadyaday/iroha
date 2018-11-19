@@ -50,6 +50,9 @@ namespace iroha {
     struct Round;
   }    // namespace consensus
   namespace ordering {
+    namespace transport {
+      class OnDemandOsServerGrpc;
+    }
     class OrderingGateTransportGrpc;
     class OrderingServiceTransportGrpc;
   }  // namespace ordering
@@ -65,6 +68,7 @@ namespace integration_framework {
     class MstNetworkNotifier;
     class OgNetworkNotifier;
     class OsNetworkNotifier;
+    class OnDemandOsNetworkNotifier;
     class YacNetworkNotifier;
     struct BatchesForRound;
     struct MstMessage;
