@@ -157,6 +157,9 @@ TEST_F(FakePeerExampleFixture,
   }
 
   // From now the itf peer is considered unreachable from the rest network. //
+  for (auto &fake_peer : fake_peers_) {
+    fake_peer->setBehaviour(std::make_shared<fake_peer::EmptyBehaviour>());
+  }
 
   // Function to sign a block with a peer's key.
   auto sign_block_by_peers = [](auto &&block, const auto &peers) {
@@ -227,6 +230,9 @@ TEST_F(FakePeerExampleFixture,
           .finish());
 
   // From now the itf peer is considered reachable from the rest network. //
+  for (auto &fake_peer : fake_peers_) {
+    fake_peer->setBehaviour(std::make_shared<fake_peer::HonestBehaviour>());
+  }
 
   // Suppose the rantipole peer created a valid Commit message for the tip of
   // the valid branch, containing its own vote in the beginning of the votes
