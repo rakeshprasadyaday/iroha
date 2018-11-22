@@ -101,9 +101,7 @@ class ToriiServiceTest : public testing::Test {
     pcsMock = std::make_shared<CustomPeerCommunicationServiceMock>(
         prop_notifier_, commit_notifier_, verified_prop_notifier_);
     mst = std::make_shared<iroha::MockMstProcessor>();
-    wsv_query = std::make_shared<MockWsvQuery>();
-    block_query = std::make_shared<MockBlockQuery>();
-    storage = std::make_shared<MockStorage>();
+    persistent_cache = std::make_shared<MockTxPresenceCahce>();
 
     EXPECT_CALL(*mst, onStateUpdateImpl())
         .WillRepeatedly(Return(mst_update_notifier.get_observable()));
@@ -116,10 +114,6 @@ class ToriiServiceTest : public testing::Test {
     auto tx_processor =
         std::make_shared<iroha::torii::TransactionProcessorImpl>(
             pcsMock, mst, status_bus);
-
-    EXPECT_CALL(*block_query, getTxByHashSync(_))
-        .WillRepeatedly(Return(boost::none));
-    EXPECT_CALL(*storage, getBlockQuery()).WillRepeatedly(Return(block_query));
 
     //----------- Server run ----------------
     auto status_factory =
@@ -140,7 +134,7 @@ class ToriiServiceTest : public testing::Test {
     runner
         ->append(std::make_unique<torii::CommandServiceTransportGrpc>(
             std::make_shared<torii::CommandServiceImpl>(
-                tx_processor, storage, status_bus, status_factory),
+                tx_processor, persistent_cache, status_bus, status_factory),
             status_bus,
             initial_timeout,
             nonfinal_timeout,
@@ -162,9 +156,7 @@ class ToriiServiceTest : public testing::Test {
 
   std::unique_ptr<ServerRunner> runner;
 
-  std::shared_ptr<MockWsvQuery> wsv_query;
-  std::shared_ptr<MockBlockQuery> block_query;
-  std::shared_ptr<MockStorage> storage;
+  std::shared_ptr<MockTxPresenceCahce> persistent_cache;
 
   rxcpp::subjects::subject<std::shared_ptr<shared_model::interface::Proposal>>
       prop_notifier_;

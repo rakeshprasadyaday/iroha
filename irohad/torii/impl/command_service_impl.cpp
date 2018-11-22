@@ -8,6 +8,7 @@
 #include <thread>
 
 #include "ametsuchi/block_query.hpp"
+#include "ametsuchi/tx_cache_response.hpp"
 #include "common/byteutils.hpp"
 #include "common/is_any.hpp"
 #include "common/visitor.hpp"
@@ -17,12 +18,12 @@ namespace torii {
 
   CommandServiceImpl::CommandServiceImpl(
       std::shared_ptr<iroha::torii::TransactionProcessor> tx_processor,
-      std::shared_ptr<iroha::ametsuchi::Storage> storage,
+      std::shared_ptr<iroha::ametsuchi::TxPresenceCache> persistent_cache,
       std::shared_ptr<iroha::torii::StatusBus> status_bus,
       std::shared_ptr<shared_model::interface::TxStatusFactory> status_factory)
       : tx_processor_(std::move(tx_processor)),
-        storage_(std::move(storage)),
         status_bus_(std::move(status_bus)),
+        persistent_cache_(persistent_cache),
         cache_(std::make_shared<CacheType>()),
         status_factory_(std::move(status_factory)),
         log_(logger::log("CommandServiceImpl")) {
@@ -54,17 +55,29 @@ namespace torii {
       return cached.value();
     }
 
-    const bool is_present = storage_->getBlockQuery()->hasTxWithHash(request);
-
-    if (is_present) {
-      std::shared_ptr<shared_model::interface::TransactionResponse> response =
-          status_factory_->makeCommitted(request, "");
-      cache_->addItem(request, response);
-      return response;
-    } else {
-      log_->warn("Asked non-existing tx: {}", request.hex());
-      return status_factory_->makeNotReceived(request, "");
-    }
+    using namespace iroha::ametsuchi::tx_cache_status_responses;
+    auto status = persistent_cache_->check(request);
+    return iroha::visit_in_place(
+        status,
+        [this](const Committed &commit) {
+          std::shared_ptr<shared_model::interface::TransactionResponse>
+              response = status_factory_->makeCommitted(commit.hash, "");
+          cache_->addItem(commit.hash, response);
+          return response;
+        },
+        [this](const Rejected &reject) {
+          std::shared_ptr<shared_model::interface::TransactionResponse>
+              response = status_factory_->makeRejected(reject.hash, "");
+          cache_->addItem(reject.hash, response);
+          return response;
+        },
+        [this](const Missing &miss) {
+          std::shared_ptr<shared_model::interface::TransactionResponse>
+              response = status_factory_->makeRejected(miss.hash, "");
+          log_->info("Asked non-existing tx with hash[{}]",
+                     miss.hash.toString());
+          return response;
+        });
   }
 
   /**
@@ -125,27 +138,47 @@ namespace torii {
 
   void CommandServiceImpl::processBatch(
       std::shared_ptr<shared_model::interface::TransactionBatch> batch) {
-    tx_processor_->batchHandle(batch);
-    const auto &txs = batch->transactions();
-    std::for_each(txs.begin(), txs.end(), [this](const auto &tx) {
-      const auto &tx_hash = tx->hash();
-      auto found = cache_->findItem(tx_hash);
-      // StatlessValid status goes only after EnoughSignaturesCollectedResponse
-      // So doesn't skip publishing status after it
-      if (found
-          and iroha::visit_in_place(
-                  found.value()->get(),
-                  [](const shared_model::interface::
-                         EnoughSignaturesCollectedResponse &) { return false; },
-                  [](auto &) { return true; })
-          and tx->quorum() < 2) {
-        log_->warn("Found transaction {} in cache, ignoring", tx_hash.hex());
-        return;
-      }
 
-      this->pushStatus("ToriiBatchProcessor",
-                       status_factory_->makeStatelessValid(tx_hash, ""));
-    });
+    auto response = persistent_cache_->check(*batch);
+
+    // if at least one tx is appeared in ledger - it is replay
+    auto is_replay =
+        std::any_of(response.begin(), response.end(), [](const auto &tx_resp) {
+          return iroha::visit_in_place(
+              tx_resp,
+              [](const iroha::ametsuchi::tx_cache_status_responses::Missing &) {
+                return false;
+              },
+              [](const auto &) { return true; });
+        });
+    if (not is_replay) {
+      tx_processor_->batchHandle(batch);
+    } else {
+      log_->warn("Batch {} is already processed",
+                 batch->reducedHash().toString());
+    }
+    //    const auto &txs = batch->transactions();
+    //    std::for_each(txs.begin(), txs.end(), [this](const auto &tx) {
+    //      const auto &tx_hash = tx->hash();
+    //      auto found = cache_->findItem(tx_hash);
+    //      // StatlessValid status goes only after
+    //      EnoughSignaturesCollectedResponse
+    //      // So doesn't skip publishing status after it
+    //      if (found
+    //          and iroha::visit_in_place(
+    //                  found.value()->get(),
+    //                  [](const shared_model::interface::
+    //                         EnoughSignaturesCollectedResponse &) { return
+    //                         false; },
+    //                  [](auto &) { return true; })
+    //          and tx->quorum() < 2) {
+    //        log_->warn("Found transaction {} in cache, ignoring",
+    //        tx_hash.hex()); return;
+    //      }
+    //
+    //      this->pushStatus("ToriiBatchProcessor",
+    //                       status_factory_->makeStatelessValid(tx_hash, ""));
+    //    });
   }
 
 }  // namespace torii

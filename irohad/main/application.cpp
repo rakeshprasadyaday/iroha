@@ -361,8 +361,9 @@ void Irohad::initTransactionCommandService() {
       pcs, mst_processor, status_bus_);
   auto status_factory =
       std::make_shared<shared_model::proto::ProtoTxStatusFactory>();
+  auto mock_persistent_cache = std::make_shared<MockTxPresenceCahce>();
   command_service = std::make_shared<::torii::CommandServiceImpl>(
-      tx_processor, storage, status_bus_, status_factory);
+      tx_processor, mock_persistent_cache, status_bus_, status_factory);
   command_service_transport =
       std::make_shared<::torii::CommandServiceTransportGrpc>(
           command_service,

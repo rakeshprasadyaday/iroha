@@ -79,6 +79,7 @@ class ClientServerTest : public testing::Test {
     block_query = std::make_shared<MockBlockQuery>();
     query_executor = std::make_shared<MockQueryExecutor>();
     storage = std::make_shared<MockStorage>();
+    persistent_cache = std::make_shared<MockTxPresenceCahce>();
 
     rxcpp::subjects::subject<std::shared_ptr<shared_model::interface::Proposal>>
         prop_notifier;
@@ -142,7 +143,7 @@ class ClientServerTest : public testing::Test {
     runner
         ->append(std::make_unique<torii::CommandServiceTransportGrpc>(
             std::make_shared<torii::CommandServiceImpl>(
-                tx_processor, storage, status_bus, status_factory),
+                tx_processor, persistent_cache, status_bus, status_factory),
             status_bus,
             initial_timeout,
             nonfinal_timeout,
@@ -186,6 +187,7 @@ class ClientServerTest : public testing::Test {
   std::shared_ptr<MockBlockQuery> block_query;
   std::shared_ptr<MockQueryExecutor> query_executor;
   std::shared_ptr<MockStorage> storage;
+  std::shared_ptr<MockTxPresenceCahce> persistent_cache;
 
   const std::string ip = "127.0.0.1";
   int port;

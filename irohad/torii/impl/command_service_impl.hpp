@@ -8,7 +8,7 @@
 
 #include "torii/command_service.hpp"
 
-#include "ametsuchi/storage.hpp"
+#include "ametsuchi/tx_presence_cache.hpp"
 #include "cache/cache.hpp"
 #include "cryptography/hash.hpp"
 #include "interfaces/iroha_internal/tx_status_factory.hpp"
@@ -30,7 +30,7 @@ namespace torii {
      */
     CommandServiceImpl(
         std::shared_ptr<iroha::torii::TransactionProcessor> tx_processor,
-        std::shared_ptr<iroha::ametsuchi::Storage> storage,
+        std::shared_ptr<iroha::ametsuchi::TxPresenceCache> persistent_cache,
         std::shared_ptr<iroha::torii::StatusBus> status_bus,
         std::shared_ptr<shared_model::interface::TxStatusFactory>
             status_factory);
@@ -86,8 +86,8 @@ namespace torii {
         shared_model::crypto::Hash::Hasher>;
 
     std::shared_ptr<iroha::torii::TransactionProcessor> tx_processor_;
-    std::shared_ptr<iroha::ametsuchi::Storage> storage_;
     std::shared_ptr<iroha::torii::StatusBus> status_bus_;
+    std::shared_ptr<iroha::ametsuchi::TxPresenceCache> persistent_cache_;
     std::shared_ptr<CacheType> cache_;
     std::shared_ptr<shared_model::interface::TxStatusFactory> status_factory_;
 
