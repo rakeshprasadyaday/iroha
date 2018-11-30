@@ -40,7 +40,7 @@ ProtoBlockFactory::unsafeCreateBlock(
                 [block_payload](const auto &hash) {
                   auto *next_hash =
                       block_payload->add_rejected_transactions_hashes();
-                  (*next_hash) = crypto::toBinaryString(hash);
+                  (*next_hash) = hash.hex();
                 });
 
   return std::make_unique<shared_model::proto::Block>(std::move(block));

@@ -158,7 +158,7 @@ namespace torii {
     *response =
         std::static_pointer_cast<shared_model::proto::TransactionResponse>(
             command_service_->getStatus(
-                shared_model::crypto::Hash(request->tx_hash())))
+                shared_model::crypto::Hash::fromHexString(request->tx_hash())))
             ->getTransport();
     return grpc::Status::OK;
   }
