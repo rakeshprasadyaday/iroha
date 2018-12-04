@@ -189,3 +189,10 @@ addtest(set_account_quorum_test
 target_link_libraries(set_account_quorum_test
     acceptance_fixture
     )
+
+addtest(query_tx_pagination_test
+    query_tx_pagination_test.cpp
+    )
+target_link_libraries(query_tx_pagination_test
+    acceptance_fixture
+    )
